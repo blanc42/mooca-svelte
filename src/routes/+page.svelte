@@ -1,4 +1,4 @@
-<div class="w-full h-screen bg-neutral-950 text-white flex justify-center items-center">
+<div class="w-full h-screen  text-white flex justify-center items-center">
   <nav class="text-center flex items-center justify-center gap-4">
     <a href="/auth/signup" class="block px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Signup</a>
     <a href="/auth/login" class="block px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">Login</a>

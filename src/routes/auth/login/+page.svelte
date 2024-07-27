@@ -1,69 +1,82 @@
-<script>
-  import { createEventDispatcher } from 'svelte';
-  import { onMount } from 'svelte';
+<script lang="ts">
+  import { z } from 'zod';
   import { goto } from '$app/navigation';
 
-  let username = '';
-  let password = '';
-  const dispatch = createEventDispatcher();
+  // Define the login request and response types using Zod
+  const LoginRequest = z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+  });
 
-  /**
-     * @param {{ preventDefault: () => void; }} event
-     */
-  async function handleSubmit(event) {
+  type LoginRequestType = z.infer<typeof LoginRequest>;
+
+  const LoginResponse = z.object({
+    message: z.string(),
+  });
+
+  type LoginResponseType = z.infer<typeof LoginResponse>;
+
+  let email = '';
+  let password = '';
+  let errorMessage = '';
+
+  async function handleLogin(event: SubmitEvent) {
     event.preventDefault();
-    const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ username, password })
-    });
-    
-    if (response.ok) {
-      dispatch('loginSuccess');
-      console.log('loginSuccess');
-      // goto('/dashboard'); // Uncomment to redirect after login
-    } else {
-      const error = await response.json();
-      console.error(error);
+    errorMessage = '';
+
+    try {
+      const loginData: LoginRequestType = { email, password };
+      const response = await fetch('http://localhost:8080/api/v1/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+        credentials: 'include', // This is crucial for including cookies
+      });
+
+      if (response.ok) {
+        const data: LoginResponseType = await response.json();
+        console.log('Login successful:', data.message);
+        // goto('/');
+      } else {
+        const error = await response.json();
+        errorMessage = error.error || 'Login failed. Please try again.';
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      errorMessage = 'An unexpected error occurred. Please try again.';
     }
   }
 </script>
 
-<style lang="postcss">
-  .login-container {
-    @apply flex items-center justify-center h-screen;
-  }
-  .login-box {
-    @apply p-8 rounded-lg shadow-md w-96 bg-neutral-700;
-  }
-  .login-input {
-    @apply w-full p-2 mb-4 border border-gray-300 rounded bg-neutral-500 text-gray-950;
-  }
-  .login-button {
-    @apply w-full p-2 bg-blue-500 text-white rounded;
-  }
-</style>
-
-<div class="login-container">
-  <form class="login-box" on:submit={handleSubmit}>
-    <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+<div class="flex items-center justify-center h-screen">
+  <form
+    class="p-8 rounded-lg shadow-md w-96 bg-neutral-700"
+    on:submit={handleLogin}
+  >
+    <h2 class="text-2xl font-bold mb-6 text-center text-white">Login</h2>
+    {#if errorMessage}
+      <p class="text-red-500 mb-4">{errorMessage}</p>
+    {/if}
     <input
-      class="login-input"
-      type="text"
-      placeholder="Username"
-      bind:value={username}
+      class="w-full p-2 mb-4 border border-gray-300 rounded bg-neutral-500 text-gray-950 placeholder:text-gray-900 border-neutral-600"
+      type="email"
+      placeholder="Email"
+      bind:value={email}
       required
     />
     <input
-      class="login-input"
+      class="w-full p-2 mb-4 border border-gray-300 rounded bg-neutral-500 text-gray-950 placeholder:text-gray-900 border-neutral-600"
       type="password"
       placeholder="Password"
       bind:value={password}
       required
     />
-    <button class="login-button" type="submit">Login</button>
+    <button
+      class="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      type="submit">Login</button
+    >
   </form>
 </div>
 
